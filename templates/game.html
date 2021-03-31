@@ -1,0 +1,245 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <style>
+      canvas{
+        border:1px solid #d3d3d3;
+        background-color: #f1f1f1;
+        
+      }
+      .sidenav {
+        height: 100%; /* Full-height: remove this if you want "auto" height */
+        width: 550px; /* Set the width of the sidebar */
+        position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+        z-index: 1; /* Stay on top */
+        top: 0; /* Stay at the top */
+        left: 0;
+        overflow-x: hidden; /* Disable horizontal scroll */
+        padding-top: 20px;
+        }
+        
+
+        .sidenav a {
+        padding: 6px 8px 6px 16px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #818181;
+        display: block;
+        }
+
+        .main {
+        margin-left: 550px; /* Same as the width of the sidebar */
+        padding: 0px 10px;
+        }
+        body{
+          overflow: hidden;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="sidenav mt-2">
+  <h3 class="m-4">High Scores</h3>
+<table class="table table-light table-sm m-4 mt-5">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Score</th>
+  </tr>
+</thead>
+<tbody>
+  {% for record in data%}
+  <tr>
+    <td>{{record.name}}</td>
+    <td>{{record.score}}</td>
+  </tr>
+  {% endfor %}
+</tbody>  
+</table>
+
+
+</div>
+
+<div class="main" align="center">
+
+      <div class="row mt-2">
+        <h3 class="m-4">Blinker</h3>
+      </div>
+
+
+      <div class="row" id="gamebar"> 
+      <div class="col"></div>
+      <div class="col">
+      <h4>Chances : <a id="chances">5</a></h4>
+      
+      </div>
+      <div class="col">
+      <h4>Score : <a id="score">0</a></h4>
+      
+      </div>
+      <div class="col"></div>
+    
+      </div>
+
+
+
+
+      <div class="row">
+      <div class="container">
+      <canvas id = "mycanvas" style="border:1px solid #000000;" ></canvas> 
+      </div>
+      </div>
+
+    
+
+    
+      <a id = "start" class="btn btn-primary btn-lg m-3" onclick="startGame()">Start</a>
+      
+
+    
+</div>
+
+
+<script>
+  var xVal;
+  var yVal;
+  var m;
+  var n;
+  var score = 0;
+  var chances  = 5;
+  canvas = document.getElementById("mycanvas");
+  
+
+  context = canvas.getContext('2d');
+  elemLeft = canvas.offsetLeft,
+  elemTop = canvas.offsetTop,
+  canvas.height = 500;
+  canvas.width = 500;
+  drawBoard();
+
+
+  function startGame(){
+    chances = 5;
+    score = 0;
+    document.getElementById("chances").innerHTML = chances;
+    document.getElementById("score").innerHTML = score;
+    score = 0;
+    drawBoard();
+    document.getElementById("gamebar").style.visibility = "visible"
+    document.getElementById("start").style.visibility = "hidden";
+    myGame();
+    
+
+    
+  }
+
+  function myGame(){
+    context.clearRect(0,0,500,500);
+    drawBoard();
+    game();
+  }
+
+  function drawBoard(){
+    for(var x= 0; x<500; x+= 50){
+      context.moveTo(x,0);
+      context.lineTo(x,500);
+    }
+    for(var y= 0; y<500; y+= 50){
+      context.moveTo(0,y);
+      context.lineTo(500,y);
+    }
+
+    context.stroke();
+  }
+
+  function game(){
+    m = Math.floor(Math.random()*10);
+    n = Math.floor(Math.random()*10);
+    m = m * 50;
+    n = n * 50;
+    var randomColor = Math.floor(Math.random()*16777215).toString(16);
+    context.fillStyle = '#' + String(randomColor);
+    context.fillRect(m,n,50,50);
+    
+    canvas.addEventListener('click',function(evt){
+      var rect = canvas.getBoundingClientRect();
+      console.log(rect.top);
+      xVal = event.pageX - rect.left;
+      yVal = event.pageY - rect.top;
+      
+      
+    },false);
+    
+    //check(m,n,xVal,yVal);
+    setTimeout(check,1000);
+    
+  }
+
+  function check(){
+    console.log("m = " + m + " xVal = " + xVal + " n = "+ n + " yval = " + yVal);
+    if(xVal >= m && xVal <= m+50 && yVal >= n && yVal <= n+50){
+      console.log("true");
+      score += 5;
+    }
+    else{
+      console.log("false");
+      chances -= 1;
+    }
+    document.getElementById("score").innerHTML = score;
+    document.getElementById("chances").innerHTML = chances;
+    console.log("--------------");
+    if(chances > 0){
+      
+      myGame();
+    }
+    else{
+      
+      
+
+      document.getElementById("start").style.visibility = "visible";
+      chances = 0;
+      
+      console.log(score,chances);
+      
+      $.ajax({
+        type: "POST",
+        url: '/score',
+        data : {
+          score : score
+        },
+        success: function(){
+          setTimeout(location.reload(),10000);
+        }
+    });
+
+    
+    
+    
+      
+    }
+    document.getElementById("score").innerHTML = score;
+    document.getElementById("chances").innerHTML = chances;
+    
+
+  }
+
+
+
+</script> 
+
+
+
+
+</body>
+
+</html>
